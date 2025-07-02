@@ -58,10 +58,11 @@ def check_feed():
         time.sleep(600)  # 10분마다 반복
 
 # 백그라운드 루프 시작
-def start_background():
-    thread = threading.Thread(target=check_feed)
-    thread.daemon = True
-    thread.start()
+def create_app():
+    start_background()
+    return app
+
+app = create_app()
 
 if __name__ == "__main__":
     start_background()
