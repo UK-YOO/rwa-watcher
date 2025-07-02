@@ -62,5 +62,6 @@ def check_rss():
         return "ℹ️ 키워드에 매칭되는 항목이 없습니다."
 
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8000)
+import os
+port = int(os.environ.get("PORT", 8000))  # 환경변수 없을 땐 8000 fallback
+app.run(host="0.0.0.0", port=port)
