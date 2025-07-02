@@ -30,25 +30,30 @@ def send_telegram(message):
         print("❌ 텔레그램 전송 오류:", e)
 
 def check_feed():
-    feed_url = os.environ.get("RSS_FEED_URL")
-    keywords = os.environ.get("KEYWORDS", "").split(",")
-    if not feed_url or not keywords:
-        print("❌ 환경변수 RSS_FEED_URL 또는 KEYWORDS 누락")
-        return
+    try:
+        feed_url = os.environ.get("RSS_FEED_URL")
+        keywords = os.environ.get("KEYWORDS", "").split(",")
+        if not feed_url or not keywords:
+            print("❌ 환경변수 누락")
+            return
 
-    while True:
-        try:
-            feed = feedparser.parse(feed_url)
-            for entry in feed.entries:
-                title = entry.title
-                link = entry.link
-                if link in sent_links:
-                    continue
-                if any(keyword.lower() in title.lower() for keyword in keywords):
-                    send_telegram(f"📰 새 기사 발견!\n\n📌 제목: {title}\n🔗 링크: {link}")
-                    sent_links.add(link)
-        except Exception as e:
-            print("❌ 피드 파싱 오류:", e)
+        while True:
+            try:
+                feed = feedparser.parse(feed_url)
+                for entry in feed.entries:
+                    title = entry.title
+                    link = entry.link
+                    if link in sent_links:
+                        continue
+                    if any(keyword.lower() in title.lower() for keyword in keywords):
+                        send_telegram(f"📰 새 기사 발견!\n\n📌 제목: {title}\n🔗 링크: {link}")
+                        sent_links.add(link)
+            except Exception as e:
+                print("❌ 루프 내부 에러:", e)
+
+            time.sleep(600)
+    except Exception as e:
+        print("❌ check_feed 전체 에러:", e)
 
         time.sleep(600)  # 10분마다 반복
 
