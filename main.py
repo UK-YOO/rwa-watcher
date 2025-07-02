@@ -3,7 +3,7 @@ import requests, os, threading, time
 import feedparser
 
 app = Flask(__name__)
-sent_links = set()  # 전송된 기사 캐시
+sent_links = set()
 
 def send_telegram(message):
     token = os.environ.get("BOT_TOKEN")
@@ -20,28 +20,27 @@ def send_telegram(message):
         print("❌ 텔레그램 전송 오류:", e)
 
 def check_feed():
-    try:
-        feed_url = os.environ.get("RSS_FEED_URL")
-        keywords = os.environ.get("KEYWORDS", "").split(",")
-        if not feed_url or not keywords:
-            print("❌ 환경변수 RSS_FEED_URL 또는 KEYWORDS 누락")
-            return
-        while True:
-            try:
-                feed = feedparser.parse(feed_url)
-                for entry in feed.entries:
-                    title = entry.title
-                    link = entry.link
-                    if link in sent_links:
-                        continue
-                    if any(keyword.lower() in title.lower() for keyword in keywords):
-                        send_telegram(f"📰 새 기사 발견!\n\n📌 제목: {title}\n🔗 링크: {link}")
-                        sent_links.add(link)
-            except Exception as e:
-                print("❌ 루프 내부 오류:", e)
-            time.sleep(600)
-    except Exception as e:
-        print("❌ 피드 체크 전체 오류:", e)
+    print("📡 피드 모니터링 시작")
+    feed_url = os.environ.get("RSS_FEED_URL")
+    keywords = os.environ.get("KEYWORDS", "").split(",")
+    if not feed_url or not keywords:
+        print("❌ RSS_FEED_URL 또는 KEYWORDS 누락")
+        return
+
+    while True:
+        try:
+            feed = feedparser.parse(feed_url)
+            for entry in feed.entries:
+                title = entry.title
+                link = entry.link
+                if link in sent_links:
+                    continue
+                if any(keyword.lower() in title.lower() for keyword in keywords):
+                    send_telegram(f"📰 새 기사 발견!\n\n📌 제목: {title}\n🔗 링크: {link}")
+                    sent_links.add(link)
+        except Exception as e:
+            print("❌ 루프 내부 오류:", e)
+        time.sleep(600)
 
 @app.route("/")
 def index():
@@ -52,13 +51,12 @@ def test():
     send_telegram("📢 테스트 알림입니다.")
     return "✅ 테스트 메시지 전송 성공!"
 
-def start_background():
-    thread = threading.Thread(target=check_feed)
-    thread.daemon = True
+# 🚨 이건 app 만들고 나서 별도로 Railway에서 실행될 때만 돌도록 분리
+def start_background_thread():
+    thread = threading.Thread(target=check_feed, daemon=True)
     thread.start()
 
-def create_app():
-    start_background()
-    return app
-
-app = create_app()
+# gunicorn은 여기까지만 로딩
+if __name__ == "__main__":
+    start_background_thread()
+    app.run(host="0.0.0.0", port=5000)
