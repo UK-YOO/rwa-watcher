@@ -22,3 +22,6 @@ def test():
     r = requests.post(url, data=data)
 
     return f"텔레그램 응답 코드: {r.status_code}"
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=8000)
