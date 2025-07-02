@@ -3,29 +3,19 @@ import requests, os, threading, time
 import feedparser
 
 app = Flask(__name__)
-
-# 중복 전송 방지를 위한 링크 캐시
-sent_links = set()
-
-@app.route("/")
-def index():
-    return "✅ 서버 정상 작동 중!"
-
-@app.route("/test")
-def test():
-    send_telegram("📢 테스트 알림입니다.")
-    return "✅ 테스트 메시지 전송 성공!"
+sent_links = set()  # 전송된 기사 캐시
 
 def send_telegram(message):
     token = os.environ.get("BOT_TOKEN")
     chat_id = os.environ.get("CHAT_ID")
     if not token or not chat_id:
+        print("❌ BOT_TOKEN 또는 CHAT_ID 누락")
         return
-
     url = f"https://api.telegram.org/bot{token}/sendMessage"
     data = {"chat_id": chat_id, "text": message}
     try:
-        requests.post(url, data=data)
+        res = requests.post(url, data=data)
+        print("✅ 텔레그램 응답 코드:", res.status_code)
     except Exception as e:
         print("❌ 텔레그램 전송 오류:", e)
 
@@ -34,9 +24,8 @@ def check_feed():
         feed_url = os.environ.get("RSS_FEED_URL")
         keywords = os.environ.get("KEYWORDS", "").split(",")
         if not feed_url or not keywords:
-            print("❌ 환경변수 누락")
+            print("❌ 환경변수 RSS_FEED_URL 또는 KEYWORDS 누락")
             return
-
         while True:
             try:
                 feed = feedparser.parse(feed_url)
@@ -49,21 +38,27 @@ def check_feed():
                         send_telegram(f"📰 새 기사 발견!\n\n📌 제목: {title}\n🔗 링크: {link}")
                         sent_links.add(link)
             except Exception as e:
-                print("❌ 루프 내부 에러:", e)
-
+                print("❌ 루프 내부 오류:", e)
             time.sleep(600)
     except Exception as e:
-        print("❌ check_feed 전체 에러:", e)
+        print("❌ 피드 체크 전체 오류:", e)
 
-        time.sleep(600)  # 10분마다 반복
+@app.route("/")
+def index():
+    return "✅ 서버 정상 작동 중!"
 
-# 백그라운드 루프 시작
+@app.route("/test")
+def test():
+    send_telegram("📢 테스트 알림입니다.")
+    return "✅ 테스트 메시지 전송 성공!"
+
+def start_background():
+    thread = threading.Thread(target=check_feed)
+    thread.daemon = True
+    thread.start()
+
 def create_app():
     start_background()
     return app
 
 app = create_app()
-
-if __name__ == "__main__":
-    start_background()
-    app.run(host="0.0.0.0", port=5000)
