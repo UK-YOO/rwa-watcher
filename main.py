@@ -1,3 +1,4 @@
+
 from flask import Flask
 import requests
 import os
@@ -22,3 +23,8 @@ def test():
     r = requests.post(url, data=data)
 
     return f"📨 텔레그램 응답 코드: {r.status_code}"
+
+# ✅ 필수: Railway가 지정한 포트를 수신하도록 설정
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
