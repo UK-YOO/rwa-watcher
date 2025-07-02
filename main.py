@@ -1,31 +1,24 @@
-
 from flask import Flask
-import os
 import requests
+import os
 
 app = Flask(__name__)
 
-TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
-TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
-
-def send_telegram_message(message):
-    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-    data = {"chat_id": TELEGRAM_CHAT_ID, "text": message}
-    try:
-        res = requests.post(url, data=data)
-        print(f"[텔레그램 전송 결과] {res.status_code} / {res.text}")
-    except Exception as e:
-        print(f"[전송 오류] {e}")
-
 @app.route("/")
 def index():
-    send_telegram_message("✅ 봇이 Railway에서 실행되었습니다.")
-    return "봇 실행 중!"
+    return "✅ 서버 정상 작동 중!"
 
 @app.route("/test")
 def test():
-    send_telegram_message("✅ 테스트 호출 - 메시지 전송됨!")
-    return "테스트 메시지 전송 완료!"
+    token = os.environ.get("TELEGRAM_BOT_TOKEN")
+    chat_id = os.environ.get("TELEGRAM_CHAT_ID")
+    message = "✅ 테스트 알림입니다."
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+    if not token or not chat_id:
+        return "❌ 환경변수 누락!"
+
+    url = f"https://api.telegram.org/bot{token}/sendMessage"
+    data = {"chat_id": chat_id, "text": message}
+    r = requests.post(url, data=data)
+
+    return f"텔레그램 응답 코드: {r.status_code}"
