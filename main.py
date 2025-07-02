@@ -24,7 +24,7 @@ def check_feed():
     feed_url = os.environ.get("RSS_FEED_URL")
     keywords = os.environ.get("KEYWORDS", "").split(",")
     if not feed_url or not keywords:
-        print("❌ RSS_FEED_URL 또는 KEYWORDS 누락")
+        print("❌ 환경변수 누락")
         return
 
     while True:
@@ -51,12 +51,11 @@ def test():
     send_telegram("📢 테스트 알림입니다.")
     return "✅ 테스트 메시지 전송 성공!"
 
-# 🚨 이건 app 만들고 나서 별도로 Railway에서 실행될 때만 돌도록 분리
 def start_background_thread():
     thread = threading.Thread(target=check_feed, daemon=True)
     thread.start()
 
-# gunicorn은 여기까지만 로딩
 if __name__ == "__main__":
+    print("✅ 앱 로딩 시작됨")
     start_background_thread()
     app.run(host="0.0.0.0", port=5000)
