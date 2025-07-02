@@ -3,7 +3,7 @@ import requests, os, threading, time
 import feedparser
 
 app = Flask(__name__)
-sent_links = set()  # 전송된 기사 캐시
+sent_links = set()
 
 def send_telegram(message):
     token = os.environ.get("BOT_TOKEN")
@@ -57,8 +57,4 @@ def start_background():
     thread.daemon = True
     thread.start()
 
-def create_app():
-    start_background()
-    return app
-
-app = create_app()
+start_background()
