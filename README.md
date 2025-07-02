@@ -1,3 +1,3 @@
-# RWA Watcher
+# Telegram RSS Alert Bot
 
-This project is a simple Flask app that monitors RSS feeds and sends Telegram alerts.
+Sends Telegram alerts when RSS feed contains keywords.
