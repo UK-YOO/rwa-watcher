@@ -16,5 +16,3 @@ def ok():       return "✅ 서버 정상 작동 중!"
 
 @app.route("/test")
 def test():     return f"telegram → {send('📢 TEST OK')}"
-
-# Railway: gunicorn main:app  →  app 객체만 필요
