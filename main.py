@@ -1,64 +1,20 @@
 from flask import Flask
-import requests, os, threading, time
-import feedparser
+import os, requests
 
 app = Flask(__name__)
-sent_links = set()  # 전송된 기사 캐시
 
-def send_telegram(message):
-    token = os.environ.get("BOT_TOKEN")
-    chat_id = os.environ.get("CHAT_ID")
-    if not token or not chat_id:
-        print("❌ BOT_TOKEN 또는 CHAT_ID 누락")
-        return
-    url = f"https://api.telegram.org/bot{token}/sendMessage"
-    data = {"chat_id": chat_id, "text": message}
-    try:
-        res = requests.post(url, data=data)
-        print("✅ 텔레그램 응답 코드:", res.status_code)
-    except Exception as e:
-        print("❌ 텔레그램 전송 오류:", e)
+BOT  = os.getenv("BOT_TOKEN")
+CHAT = os.getenv("CHAT_ID")
 
-def check_feed():
-    try:
-        feed_url = os.environ.get("RSS_FEED_URL")
-        keywords = os.environ.get("KEYWORDS", "").split(",")
-        if not feed_url or not keywords:
-            print("❌ 환경변수 RSS_FEED_URL 또는 KEYWORDS 누락")
-            return
-        while True:
-            try:
-                feed = feedparser.parse(feed_url)
-                for entry in feed.entries:
-                    title = entry.title
-                    link = entry.link
-                    if link in sent_links:
-                        continue
-                    if any(keyword.lower() in title.lower() for keyword in keywords):
-                        send_telegram(f"📰 새 기사 발견!\n\n📌 제목: {title}\n🔗 링크: {link}")
-                        sent_links.add(link)
-            except Exception as e:
-                print("❌ 루프 내부 오류:", e)
-            time.sleep(600)
-    except Exception as e:
-        print("❌ 피드 체크 전체 오류:", e)
+def send(text):
+    url = f"https://api.telegram.org/bot{BOT}/sendMessage"
+    r = requests.post(url, data={"chat_id": CHAT, "text": text})
+    return r.status_code
 
 @app.route("/")
-def index():
-    return "✅ 서버 정상 작동 중!"
+def ok():       return "✅ 서버 정상 작동 중!"
 
 @app.route("/test")
-def test():
-    send_telegram("📢 테스트 알림입니다.")
-    return "✅ 테스트 메시지 전송 성공!"
+def test():     return f"telegram → {send('📢 TEST OK')}"
 
-def start_background():
-    thread = threading.Thread(target=check_feed)
-    thread.daemon = True
-    thread.start()
-
-def create_app():
-    start_background()
-    return app
-
-app = create_app()
+# Railway: gunicorn main:app  →  app 객체만 필요
